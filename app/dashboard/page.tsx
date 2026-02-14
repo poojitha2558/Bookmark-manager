@@ -15,12 +15,14 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  // 🔹 BroadcastChannel for cross-tab communication
-  const channelRef = useCallback(() => {
-    if (typeof window !== "undefined") {
+  // 🔹 BroadcastChannel for cross-tab communication (browser-only)
+  const getChannel = useCallback(() => {
+    if (typeof window === "undefined") return null
+    try {
       return new BroadcastChannel("bookmarks-channel")
+    } catch {
+      return null
     }
-    return null
   }, [])
 
   // 🔹 Get logged-in user and redirect if not authenticated
@@ -58,21 +60,21 @@ export default function Dashboard() {
     setBookmarks(data || [])
   }, [user?.id])
 
-  // 🔹 Setup realtime listener across tabs
+  // 🔹 Setup realtime listener across tabs (client-only)
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || typeof window === "undefined") return
 
     console.log("🔥 Setting up cross-tab communication")
     
     fetchBookmarks()
 
     // Create broadcast channel for cross-tab sync
-    const channel = channelRef()
+    const channel = getChannel()
     
     if (channel) {
       channel.onmessage = (event) => {
         console.log("📡 Message from another tab:", event.data)
-        fetchBookmarks()  // Refresh when another tab makes changes
+        fetchBookmarks()
       }
     }
 
@@ -82,7 +84,7 @@ export default function Dashboard() {
       }
     }
 
-  }, [user?.id, fetchBookmarks, channelRef])
+  }, [user?.id, fetchBookmarks, getChannel])
 
   // 🔹 Add bookmark
   const addBookmark = async () => {
@@ -104,9 +106,11 @@ export default function Dashboard() {
     setUrl("")
     
     // 📢 Broadcast to other tabs
-    const channel = channelRef()
-    if (channel) {
-      channel.postMessage({ type: "bookmark-added", title, url })
+    if (typeof window !== "undefined") {
+      const channel = getChannel()
+      if (channel) {
+        channel.postMessage({ type: "bookmark-added", title, url })
+      }
     }
     
     await fetchBookmarks()
@@ -125,9 +129,11 @@ export default function Dashboard() {
     }
 
     // 📢 Broadcast to other tabs
-    const channel = channelRef()
-    if (channel) {
-      channel.postMessage({ type: "bookmark-deleted", id })
+    if (typeof window !== "undefined") {
+      const channel = getChannel()
+      if (channel) {
+        channel.postMessage({ type: "bookmark-deleted", id })
+      }
     }
     
     await fetchBookmarks()
