@@ -4,6 +4,9 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
+// Disable prerendering for this dynamic, auth-dependent page
+export const dynamic = "force-dynamic"
+
 export default function Home() {
   const router = useRouter()
 
