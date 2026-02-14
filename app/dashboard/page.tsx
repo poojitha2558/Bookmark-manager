@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
+// Disable prerendering for this dynamic, auth-protected page
+export const dynamic = "force-dynamic"
+
 export default function Dashboard() {
   const router = useRouter()
   const [bookmarks, setBookmarks] = useState<any[]>([])
